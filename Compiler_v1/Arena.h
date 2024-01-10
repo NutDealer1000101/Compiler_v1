@@ -16,7 +16,9 @@ public:
 		T* address = new(reinterpret_cast<T*>(offset)) T();	//Default construct at the address
 		offset += sizeof(T);								//Increment the offset pointer
 
-		if (offset > end) {									//Check if offset is out of bounds
+		//Check if offset is out of bounds
+		//If we get to the point this is a problem, we should implement a way to allocate more memory at runtime
+		if (offset > end) {									
 			std::cerr << "[ARENA] Shits too small, need more memory" << std::endl;
 			exit(EXIT_FAILURE);
 		}

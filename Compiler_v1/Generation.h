@@ -4,73 +4,90 @@
 
 class Generator {
 private:
-	void gen_Ident(Token t) {
-		Print("Identifier: ", false);
-		std::cout << t.lit << std::endl;
+	void Print_Term(const Expr_Terminal* term) {
+		struct Terminal_Visitor {
+			Generator* gen;
+			void operator()(const Expr_Ident* ident) {
+				gen->Print(Token::TokenToString(ident->ident));
+			}
+			void operator()(const Expr_IntLit* intlit) {
+				gen->Print(Token::TokenToString(intlit->intlit));
+			}
+		};
+
+		Terminal_Visitor visitor = { .gen = this };
+		std::visit(visitor, term->var);
 	}
+	void Print_Expr(const Expr* expr) {
+		struct Expr_Visitor {
+			Generator* gen;
+			void operator()(const Expr_Terminal* term) {
+				gen->Print("Expr : Terminal {");
+				gen->depth++;
+				gen->Print_Term(term);
+				gen->depth--;
+				gen->Print("}");
+			}
+			void operator()(const Expr_Binary* binary) {
+				gen->Print("Expr : Binary Expression {");
+				gen->depth++;
+				gen->Print("Operator[TODO]");
+				gen->Print("Left {");
+				gen->depth++;
+				gen->Print_Expr(binary->left);
+				gen->depth--;
+				gen->Print("Right {");
+				gen->depth++;
+				gen->Print_Expr(binary->right);
+				gen->depth--;
+				gen->depth--;
+				gen->Print("}");
+			}
+		};
 
-	void gen_IntLit(Token t) {
-		Print("Integer Literal: ", false);
-		std::cout << t.lit << std::endl;
+		Expr_Visitor visitor = { .gen = this };
+		std::visit(visitor, expr->var);
 	}
+	void Print_Stmt(const Stmt* stmt) {
+		struct Stmt_Visitor {
+			Generator* gen;
 
+			void operator()(const Stmt_Return* ret) const {
+				gen->Print("Stmt : Return {");
+				gen->depth++;
+				gen->Print_Expr(ret->expr);
+				gen->depth--;
+				gen->Print("}");
+			}
+			void operator()(const Stmt_IntDec* intdec) const {
+				gen->Print("Stmt : Integer Decleration {");
+				gen->depth++;
+				gen->Print("Identifier: " + Token::TokenToString(intdec->ident));
+				gen->Print_Expr(intdec->expr);
+				gen->depth--;
+				gen->Print("}");
+			}
+		};
 
-	void gen_Expr(Expr* expr) {
-		if (std::holds_alternative<Expr_Ident*>(expr->var)) {
-			gen_Ident(std::get<Expr_Ident*>(expr->var)->ident);
-		} 
-		else if (std::holds_alternative<Expr_IntLit*>(expr->var)) {
-			gen_IntLit(std::get<Expr_IntLit*>(expr->var)->intlit);
-		} 
-		else {
-			std::cerr << "[GENERATOR] Error: Bad variant or sum shit" << std::endl;
-			exit(EXIT_FAILURE);
-		}
-	}
-
-
-
-	void gen_Stmt_Return(Stmt_Return* stmt) {
-		Print("(Statement) Return {");
-		depth++;
-		gen_Expr(stmt->expr);
-		depth--;
-		Print("}");
-	}
-	void gen_Stmt_IntDec(Stmt_IntDec* stmt) {
-		Print("(Statement) Integer Declaration {");
-		depth++;
-		gen_Ident(stmt->ident);
-		gen_Expr(stmt->expr);
-		depth--;
-		Print("}");
-	}
-	void gen_Stmt(Stmt* stmt) {
-		if (std::holds_alternative<Stmt_Return*>(stmt->var)) {
-			gen_Stmt_Return(std::get<Stmt_Return*>(stmt->var));
-		}
-		else if (std::holds_alternative<Stmt_IntDec*>(stmt->var)) {
-			gen_Stmt_IntDec(std::get<Stmt_IntDec*>(stmt->var));
-		}
-		else {
-			std::cerr << "[GENERATOR] Error: Bad variant or sum shit" << std::endl;
-			exit(EXIT_FAILURE);
-		}
+		Stmt_Visitor visitor = { .gen = this };
+		std::visit(visitor, stmt->var);
 	}
 public:
-	void Gen(const Stmt_Program& AST_root) {
+	void Print(const Stmt_Program& AST_root) {
 		std::cout << "[GENERATOR] Printing out Abstract Syntax Tree..." << std::endl << std::endl;
-		std::cout << "Program {" << std::endl;
+
+		Print("Stmt : Program {");
 		depth++;
-		for (Stmt* stmt : AST_root.body) {
-			gen_Stmt(stmt);
-			std::cout << std::endl;
+		for (const Stmt* stmt : AST_root.body) {
+			Print_Stmt(stmt);
+			Print("");
 		}
 		depth--;
-		std::cout << "}" << std::endl;
+		Print("}");
+
 		std::cout << std::endl << "[GENERATOR] AST successfully printed" << std::endl;
 	}
-private:
+public:
 	void Print(const std::string& str, bool lineBreak = true) const {
 		Depth();
 		std::cout << str;
@@ -79,7 +96,7 @@ private:
 	}
 	void Depth() const {
 		for (int i = 0; i < depth; i++) {
-			std::cout << "   ";
+			std::cout << "|  ";
 		}
 	}
 	int depth = 0;

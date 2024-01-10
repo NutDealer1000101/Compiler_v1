@@ -6,39 +6,8 @@
 #include <variant>
 #include <assert.h>
 
-/*
-struct Expr_Ident {
-	Token ident;
-};
-
-struct Expr_IntLit {
-	Token intlit;
-};
-
-struct Expr {
-	std::variant<Expr_Ident, Expr_IntLit> var;
-};
-
-struct Stmt_Return {
-	// return [expr];
-	Expr expr;
-};
-
-struct Stmt_IntDec {
-	// int [ident] = [expr];
-	Token ident;
-	Expr expr;
-};
-
-struct Stmt {
-	std::variant<Stmt_IntDec, Stmt_Return> var;
-};
-
-// Program
-struct Stmt_Program {
-	std::vector<Stmt> body;
-};
-*/
+struct Stmt;
+struct Expr;
 
 struct Expr_Ident {
 	Token ident{ .type = TokenType::IDENTIFIER, .lit = ""};
@@ -48,12 +17,18 @@ struct Expr_IntLit {
 	Token intlit{ .type = TokenType::INT_LIT, .lit = "" };
 };
 
-//struct Expr_PrimaryExpr {
-//	std::variant<Expr_Ident*, Expr_IntLit*> var;
-//};
+struct Expr_Terminal {
+	std::variant<Expr_Ident*, Expr_IntLit*> var;
+};
+
+struct Expr_Binary {
+	Expr* left;
+	Expr* right;
+	std::string op;
+};
 
 struct Expr {
-	std::variant<Expr_Ident*, Expr_IntLit*> var;
+	std::variant<Expr_Terminal*, Expr_Binary*> var;
 };
 
 struct Stmt_Return {
@@ -81,46 +56,6 @@ struct Stmt_Program {
 
 class Parser {
 private:
-	/*
-	Stmt parse_Stmt() {
-		if (TypeAt() == TokenType::RETURN) {
-			// return [expr];
-			Eat();											// return
-			auto expr = parse_Expr();						// [expr]
-			Expect(TokenType::SEMI, "Expected ';'");		// ;
-
-			return Stmt{ .var = Stmt_Return{.expr = expr} };
-		} 
-		else if (TypeAt() == TokenType::INT && TypeAt(1) == TokenType::IDENTIFIER && TypeAt(2) == TokenType::ASSIGN) {
-			// int [ident] = [expr];
-			Eat();											// int
-			auto ident = Eat();								// [ident]
-			Eat();											// =
-			auto expr = parse_Expr();						// [expr]
-			Expect(TokenType::SEMI, "Expected ';'");		// ;
-
-			return Stmt{ .var = Stmt_IntDec{.ident = ident, .expr = expr} };
-		}
-		else {
-			PrintError("Invalid Statement!");
-			return Stmt();
-		}
-	}
-
-	Expr parse_Expr() {
-		if (TypeAt() == TokenType::INT_LIT) {
-			return Expr{ .var = Expr_IntLit{.intlit = Eat()} };
-		}
-		else if (TypeAt() == TokenType::IDENTIFIER) {
-			return Expr{ .var = Expr_Ident{.ident = Eat()} };
-		}
-		else {
-			PrintError("Invalid Expression!");
-			return Expr();
-		}
-	}
-	*/
-
 	Stmt* parse_Stmt() {
 		if (TypeAt() == TokenType::RETURN) {
 			// return [expr];
@@ -153,15 +88,16 @@ private:
 		}
 		else {
 			PrintError("Invalid Statement!");
+			return {};
 		}
 	}
 
-	Expr* parse_Expr() {
+	Expr_Terminal* parse_Terminal() {
 		if (TypeAt() == TokenType::INT_LIT) {
 			Expr_IntLit* intlit = arena.alloc<Expr_IntLit>();
 			intlit->intlit = Expect(TokenType::INT_LIT);
 
-			Expr* expr = arena.alloc<Expr>();
+			Expr_Terminal* expr = arena.alloc<Expr_Terminal>();
 			expr->var = intlit;
 
 			return expr;
@@ -170,14 +106,47 @@ private:
 			Expr_Ident* ident = arena.alloc<Expr_Ident>();
 			ident->ident = Expect(TokenType::IDENTIFIER);
 
-			Expr* expr = arena.alloc<Expr>();
+			Expr_Terminal* expr = arena.alloc<Expr_Terminal>();
 			expr->var = ident;
 
 			return expr;
 		}
 		else {
 			PrintError("Invalid Expression!");
+			return {};
 		}
+	}
+	Expr* parse_Expr() {
+		Expr_Terminal* term = parse_Terminal();
+		if (TypeAt() == TokenType::ADD || TypeAt() == TokenType::SUB) {
+			Expr_Binary* expr_bin = arena.alloc<Expr_Binary>();
+			Expr* expr_lhs = arena.alloc<Expr>();
+
+			expr_lhs->var = term;
+			expr_bin->left = expr_lhs;
+			expr_bin->op = Eat().lit;
+
+			Expr* expr_rhs = parse_Expr();
+			expr_bin->right = expr_rhs;
+
+			Expr* expr = arena.alloc<Expr>();
+			expr->var = expr_bin;
+			return expr;
+		}
+		else {
+			Expr* expr = arena.alloc<Expr>();
+			expr->var = term;
+			return expr;
+		}
+
+		/*if (IsTerminal(TypeAt())) {
+			Expr* expr = arena.alloc<Expr>();
+			expr->var = parse_Terminal();
+			return expr;
+		}
+		else {
+			PrintError("Invalid Expression!");
+		} */
 	}
 public:
 	Parser(std::vector<Token> tokens) 
@@ -250,4 +219,8 @@ private:
 	std::vector<Token> tokens;
 	size_t index = 0;
 	ArenaAllocator arena;
+private:
+	bool IsTerminal(TokenType tk) {
+		return tk == TokenType::INT_LIT || tk == TokenType::IDENTIFIER;
+	}
 };

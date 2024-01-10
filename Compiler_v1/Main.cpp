@@ -27,7 +27,7 @@ int main() {
 	Stmt_Program AST = parser.GenerateAST();
 
 	Generator generator;
-	generator.Gen(AST);
+	generator.Print(AST);
 
 	std::cout << "[Program] Program finished! Press any key to exit..." << std::endl;
 

@@ -54,7 +54,6 @@
 
 // (10 + 5) * 2
 
-
 enum class TokenType {
 	//Other
 	OUT_OF_BOUNDS, //Returned when parsing if value outside of token vector tries to be read
@@ -66,7 +65,9 @@ enum class TokenType {
 	INT_LIT,
 
 	//Binary expressions
-	BIN_EXPR,
+	ADD,
+	SUB,
+	MULTIPLY,
 
 	//Keywords
 	INT,
@@ -106,8 +107,14 @@ struct Token {
 		case TokenType::INT_LIT:
 			str.append("IntLit");
 			break;
-		case TokenType::BIN_EXPR:
-			str.append("BinExpr");
+		case TokenType::ADD:
+			str.append("ADD");
+			break;
+		case TokenType::SUB:
+			str.append("SUB");
+			break;
+		case TokenType::MULTIPLY:
+			str.append("MULTIPLY");
 			break;
 		case TokenType::INT:
 			str.append("IntDec");
@@ -141,9 +148,6 @@ struct Token {
 			str.append("[" + t.lit + "]");
 			break;
 		case TokenType::INT_LIT:
-			str.append("[" + t.lit + "]");
-			break;
-		case TokenType::BIN_EXPR:
 			str.append("[" + t.lit + "]");
 			break;
 		}
@@ -194,15 +198,15 @@ public:
 			}
 			else if (At().value() == '+') {
 				Eat();
-				AddToken(TokenType::BIN_EXPR, "+");
+				AddToken(TokenType::ADD);
 			}
 			else if (At().value() == '-') {
 				Eat();
-				AddToken(TokenType::BIN_EXPR, "-");
+				AddToken(TokenType::SUB);
 			}
 			else if (At().value() == '*') {
 				Eat();
-				AddToken(TokenType::BIN_EXPR, "*");
+				AddToken(TokenType::MULTIPLY);
 			}
 			else if (std::isalpha(At().value())) {
 				buf.push_back(Eat());
