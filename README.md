@@ -50,3 +50,8 @@ $$
 	\end{cases}
 \end{align}
 $$
+
+<h1>References:</h1>
+<a href="https://www.youtube.com/playlist?list=PLUDlas_Zy_qC7c5tCgTMYq2idyyT241qs">Pixeled: Creating a Compiler</a>
+<a href="https://eli.thegreenplace.net/2012/08/02/parsing-expressions-by-precedence-climbing">The Green Place: Presedence Climbing</a>
+<a href="https://en.wikipedia.org/wiki/Compiler">Wikipedia: Compiler</a>
