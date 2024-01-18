@@ -1,3 +1,2 @@
-int x = 5;
-int x = 2 + 5 - y;
+int x = 1 + 2 * 3 + 4;
 return x;

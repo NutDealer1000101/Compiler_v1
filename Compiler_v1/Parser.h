@@ -116,37 +116,50 @@ private:
 			return {};
 		}
 	}
-	Expr* parse_Expr() {
-		Expr_Terminal* term = parse_Terminal();
-		if (TypeAt() == TokenType::ADD || TypeAt() == TokenType::SUB) {
-			Expr_Binary* expr_bin = arena.alloc<Expr_Binary>();
-			Expr* expr_lhs = arena.alloc<Expr>();
+	Expr* parse_Expr(int min_prec = 0) {
+		Expr_Terminal* term_lhs = parse_Terminal();
 
-			expr_lhs->var = term;
-			expr_bin->left = expr_lhs;
-			expr_bin->op = Eat().lit;
+		auto expr_lhs = arena.alloc<Expr>();
+		expr_lhs->var = term_lhs;
 
-			Expr* expr_rhs = parse_Expr();
-			expr_bin->right = expr_rhs;
+		while (true) {
+			Token currentToken = At();
+			if (currentToken.type == TokenType::OUT_OF_BOUNDS ||
+				!IsBinaryOp(currentToken.type) ||
+				BinaryPrecedence(currentToken.type) < min_prec) 
+			{
+				break;
+			}
 
-			Expr* expr = arena.alloc<Expr>();
-			expr->var = expr_bin;
-			return expr;
+			Token op = Eat();
+			int prec = BinaryPrecedence(op.type);
+			int nextMinPrec = prec + 1;
+
+			auto expr_rhs = parse_Expr(nextMinPrec);
+			
+			auto binary = arena.alloc<Expr_Binary>();
+			auto expr_lhs2 = arena.alloc<Expr>();
+			expr_lhs2->var = expr_lhs->var;
+
+			binary->left = expr_lhs2;
+			binary->right = expr_rhs;
+			if (op.type == TokenType::ADD) {
+				binary->op = "+";
+			}
+			else if (op.type == TokenType::SUB) {
+				binary->op = "-";
+			}
+			else if (op.type == TokenType::MULTIPLY) {
+				binary->op = "*";
+			}
+			else {
+				PrintError("Unknown operator!");
+			}
+
+			expr_lhs->var = binary;
 		}
-		else {
-			Expr* expr = arena.alloc<Expr>();
-			expr->var = term;
-			return expr;
-		}
 
-		/*if (IsTerminal(TypeAt())) {
-			Expr* expr = arena.alloc<Expr>();
-			expr->var = parse_Terminal();
-			return expr;
-		}
-		else {
-			PrintError("Invalid Expression!");
-		} */
+		return expr_lhs;
 	}
 public:
 	Parser(std::vector<Token> tokens) 
@@ -219,8 +232,4 @@ private:
 	std::vector<Token> tokens;
 	size_t index = 0;
 	ArenaAllocator arena;
-private:
-	bool IsTerminal(TokenType tk) {
-		return tk == TokenType::INT_LIT || tk == TokenType::IDENTIFIER;
-	}
 };

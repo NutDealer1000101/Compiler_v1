@@ -80,6 +80,39 @@ enum class TokenType {
 	CLOSE_PAREN
 };
 
+bool IsTerminal(TokenType tk) {
+	switch (tk) {
+	case TokenType::IDENTIFIER:
+	case TokenType::INT_LIT:
+		return true;
+	default:
+		return false;
+	}
+}
+
+bool IsBinaryOp(TokenType tk) {
+	switch (tk) {
+	case TokenType::ADD:
+	case TokenType::SUB:
+	case TokenType::MULTIPLY:
+		return true;
+	default:
+		return false;
+	}
+}
+
+int BinaryPrecedence(TokenType type) {
+	switch (type) {
+	case TokenType::ADD:
+	case TokenType::SUB:
+		return 0;
+	case TokenType::MULTIPLY:
+		return 1;
+	default:
+		return -1;
+	}
+}
+
 struct Token {
 	TokenType type;
 	std::string lit;

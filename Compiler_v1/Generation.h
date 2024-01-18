@@ -31,7 +31,7 @@ private:
 			void operator()(const Expr_Binary* binary) {
 				gen->Print("Expr : Binary Expression {");
 				gen->depth++;
-				gen->Print("Operator[TODO]");
+				gen->Print("Operator[", false); std::cout << binary->op << "]" << std::endl;
 				gen->Print("Left {");
 				gen->depth++;
 				gen->Print_Expr(binary->left);
