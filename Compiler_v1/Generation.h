@@ -3,15 +3,18 @@
 #include "Parser.h"
 
 class Generator {
-private:
+public:
 	void Print_Term(const Expr_Terminal* term) {
 		struct Terminal_Visitor {
 			Generator* gen;
-			void operator()(const Expr_Ident* ident) {
+			void operator()(const Expr_Ident* ident) const {
 				gen->Print(Token::TokenToString(ident->ident));
 			}
-			void operator()(const Expr_IntLit* intlit) {
+			void operator()(const Expr_IntLit* intlit) const {
 				gen->Print(Token::TokenToString(intlit->intlit));
+			}
+			void operator()(const Expr_Paren* paren) const {
+				gen->Print_Expr(paren->expr);
 			}
 		};
 
@@ -21,14 +24,14 @@ private:
 	void Print_Expr(const Expr* expr) {
 		struct Expr_Visitor {
 			Generator* gen;
-			void operator()(const Expr_Terminal* term) {
+			void operator()(const Expr_Terminal* term) const {
 				gen->Print("Expr : Terminal {");
 				gen->depth++;
 				gen->Print_Term(term);
 				gen->depth--;
 				gen->Print("}");
 			}
-			void operator()(const Expr_Binary* binary) {
+			void operator()(const Expr_Binary* binary) const {
 				gen->Print("Expr : Binary Expression {");
 				gen->depth++;
 				gen->Print("Operator[", false); std::cout << binary->op << "]" << std::endl;

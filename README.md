@@ -47,6 +47,7 @@ $$
 	\begin{cases}
 		\text{Identifier} \\
 		\text{IntLiteral} \\
+ 		([\text{Expr}]) \\
 	\end{cases}
 \end{align}
 $$

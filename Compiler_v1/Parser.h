@@ -17,8 +17,12 @@ struct Expr_IntLit {
 	Token intlit{ .type = TokenType::INT_LIT, .lit = "" };
 };
 
+struct Expr_Paren {
+	Expr* expr;
+};
+
 struct Expr_Terminal {
-	std::variant<Expr_Ident*, Expr_IntLit*> var;
+	std::variant<Expr_Ident*, Expr_IntLit*, Expr_Paren*> var;
 };
 
 struct Expr_Binary {
@@ -93,7 +97,20 @@ private:
 	}
 
 	Expr_Terminal* parse_Terminal() {
-		if (TypeAt() == TokenType::INT_LIT) {
+		if (TypeAt() == TokenType::OPEN_PAREN) {
+			Eat();
+			Expr* expr = parse_Expr();
+			Expect(TokenType::CLOSE_PAREN);
+
+			Expr_Paren* paren = arena.alloc<Expr_Paren>();
+			paren->expr = expr;
+
+			Expr_Terminal* term = arena.alloc<Expr_Terminal>();
+			term->var = paren;
+
+			return term;
+		}
+		else if (TypeAt() == TokenType::INT_LIT) {
 			Expr_IntLit* intlit = arena.alloc<Expr_IntLit>();
 			intlit->intlit = Expect(TokenType::INT_LIT);
 
